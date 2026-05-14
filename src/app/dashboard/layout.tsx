@@ -8,12 +8,12 @@ import { supabase } from '@/src/app/lib/supabase'
 // Lista de páginas del menú lateral
 const navegacion = [
   { nombre: 'Dashboard',    href: '/dashboard',                 icono: '📊' },
-  { nombre: 'Pedidos',      href: '../pedidos',         icono: '📋' },
-  { nombre: 'Inventario',   href: '../inventario',      icono: '📦' },
-  { nombre: 'Recetas',      href: '../inventario/recetas',         icono: '🍳' },
-  { nombre: 'Clientes',     href: '../clientes',        icono: '👥' },
+  { nombre: 'Pedidos',      href: 'dashboard/pedidos',         icono: '📋' },
+  { nombre: 'Inventario',   href: '/dashboard/inventario',      icono: '📦' },
+  { nombre: 'Recetas',      href: '/dashboard/inventario/recetas',         icono: '🍳' },
+  { nombre: 'Clientes',     href: '/dashboard/clientes',        icono: '👥' },
   { nombre: 'Finanzas',     href: '/dashboard/finanzas',        icono: '💰' },
-  { nombre: 'Configuración',href: '../configuracion',   icono: '⚙️' },
+  { nombre: 'Configuración',href: '/dashboard/configuracion',   icono: '⚙️' },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
