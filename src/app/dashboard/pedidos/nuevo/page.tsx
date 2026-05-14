@@ -27,6 +27,9 @@ export default function NuevoPedido() {
   const [ciudad, setCiudad]         = useState('')
 
   // Datos del pedido
+  const [modoProducto, setModoProducto] = useState<'inventario' | 'manual'>('inventario')
+  const [productoManual, setProductoManual] = useState('')
+  const [precioManual, setPrecioManual] = useState(0)
   const [productoId, setProductoId] = useState('')
   const [cantidad, setCantidad]     = useState(1)
   const [fechaEntrega, setFechaEntrega] = useState('')
@@ -38,16 +41,18 @@ export default function NuevoPedido() {
   const [exito, setExito]           = useState(false)
   const [error, setError]           = useState('')
 
-  // Calcular total automáticamente
   const productoSeleccionado = productosDisponibles.find(
     (p) => p.id === Number(productoId)
   )
-  const total = productoSeleccionado ? productoSeleccionado.precio * cantidad : 0
-
-  // Verificar stock
-  const stockDisponible = productoSeleccionado
-    ? productoSeleccionado.stock >= cantidad
-    : true
+  const precioUnitario = modoProducto === 'inventario'
+    ? (productoSeleccionado?.precio ?? 0)
+    : precioManual
+  const total = precioUnitario * cantidad
+  const stockDisponible = modoProducto === 'manual'
+    ? true
+    : productoSeleccionado
+      ? productoSeleccionado.stock >= cantidad
+      : true
 
   async function handleGuardar() {
     setError('')
@@ -58,6 +63,20 @@ export default function NuevoPedido() {
     if (!productoId) { setError('Selecciona un producto'); return }
     if (!fechaEntrega) { setError('La fecha de entrega es obligatoria'); return }
     if (cantidad < 1) { setError('La cantidad debe ser al menos 1'); return }
+
+        // Reemplaza la validación del producto
+    if (modoProducto === 'inventario' && !productoId) {
+      setError('Selecciona un producto del inventario')
+      return
+    }
+    if (modoProducto === 'manual' && !productoManual) {
+      setError('Escribe el nombre del producto')
+      return
+    }
+    if (modoProducto === 'manual' && precioManual <= 0) {
+      setError('El precio debe ser mayor a 0')
+      return
+    }
 
     setGuardando(true)
 
@@ -198,29 +217,88 @@ export default function NuevoPedido() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Producto <span className="text-red-500">*</span>
               </label>
-              <select
-                value={productoId}
-                onChange={(e) => setProductoId(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7] bg-white"
-              >
-                <option value="">Selecciona un producto</option>
-                {productosDisponibles.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nombre} — {formatPesos(p.precio)} (Stock: {p.stock})
-                  </option>
-                ))}
-              </select>
 
-              {/* Alerta de stock */}
-              {productoId && !stockDisponible && (
+              {/* Toggle inventario / manual */}
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setModoProducto('inventario')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    modoProducto === 'inventario'
+                      ? 'bg-[#0f1e35] text-white border-[#0f1e35]'
+                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  📦 Desde inventario
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModoProducto('manual')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    modoProducto === 'manual'
+                      ? 'bg-[#0f1e35] text-white border-[#0f1e35]'
+                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  ✏️ Escribir manualmente
+                </button>
+              </div>
+
+              {/* Selector de inventario */}
+              {modoProducto === 'inventario' && (
+                <select
+                  value={productoId}
+                  onChange={(e) => setProductoId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7] bg-white"
+                >
+                  <option value="">Selecciona un producto</option>
+                  {productosDisponibles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre} — {formatPesos(p.precio)} (Stock: {p.stock})
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {/* Entrada manual */}
+              {modoProducto === 'manual' && (
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={productoManual}
+                    onChange={(e) => setProductoManual(e.target.value)}
+                    placeholder="Nombre del producto o servicio"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]"
+                  />
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Precio unitario (COP)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={precioManual}
+                      onChange={(e) => setPrecioManual(Number(e.target.value))}
+                      placeholder="0"
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]"
+                    />
+                  </div>
+                  <div className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+                    💡 Este producto no se descontará del inventario. Si quieres controlarlo, agrégalo primero en la sección Inventario.
+                  </div>
+                </div>
+              )}
+
+              {/* Alertas de stock */}
+              {modoProducto === 'inventario' && productoId && !stockDisponible && (
                 <div className="mt-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">
                   ⚠️ Stock insuficiente. Solo hay {productoSeleccionado?.stock} unidades disponibles.
                 </div>
               )}
-              {productoId && stockDisponible && (
+              {modoProducto === 'inventario' && productoId && stockDisponible && (
                 <div className="mt-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg">
                   ✅ Stock disponible
                 </div>
