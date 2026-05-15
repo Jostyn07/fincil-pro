@@ -8,7 +8,7 @@ import { supabase } from '@/src/app/lib/supabase'
 // Lista de páginas del menú lateral
 const navegacion = [
   { nombre: 'Dashboard',    href: '/dashboard',                 icono: '📊' },
-  { nombre: 'Pedidos',      href: 'dashboard/pedidos',         icono: '📋' },
+  { nombre: 'Pedidos',      href: '/dashboard/pedidos',         icono: '📋' },
   { nombre: 'Inventario',   href: '/dashboard/inventario',      icono: '📦' },
   { nombre: 'Recetas',      href: '/dashboard/inventario/recetas',         icono: '🍳' },
   { nombre: 'Clientes',     href: '/dashboard/clientes',        icono: '👥' },
