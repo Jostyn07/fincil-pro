@@ -68,7 +68,6 @@ export default function NuevoPedido() {
 
   async function handleGuardar() {
     setError('')
-    console.log('usuarioId:', usuarioId)
     // Validaciones
     if (!cliente) { setError('El nombre del cliente es obligatorio'); return }
     if (!telefono) { setError('El teléfono es obligatorio'); return }
@@ -125,8 +124,6 @@ export default function NuevoPedido() {
       }
 
       // ── PASO 2: Crear el pedido ──
-      // const nombreProducto = modoProducto === 'inventario'? productoSeleccionado?.nombre : productoManual
-
       const { data: nuevoPedido, error: errorPedido } = await supabase
         .from('pedidos')
         .insert({
@@ -151,15 +148,17 @@ export default function NuevoPedido() {
       const { error: errorItem } = await supabase
         .from('pedido_items')
         .insert({
-          // pedido_id: null,
-          pedido_id: nuevoPedido.id,
+          pedido_id: null,
+          // pedido_id: nuevoPedido.id,
           usuario_id: usuarioId,
-          producto_id: modoProducto === 'inventario' ? Number(productoId) : null,
+          // producto_id: modoProducto === 'inventario' ? Number(productoId) : null,
+          producto_id: null,
           nombre_manual: modoProducto === 'manual' ? productoManual : null,
           cantidad: cantidad,
           precio_unitario: precioUnitario,
         })
-
+      
+        console.log('Error item detalle:', JSON.stringify(errorItem))
       if (errorItem) {
         setError('Error al guardar el producto del pedido.')
         setGuardando(false)
