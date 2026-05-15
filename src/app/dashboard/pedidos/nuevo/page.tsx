@@ -1,5 +1,6 @@
 'use client'
-
+import { useEffect } from 'react'
+import { supabase } from '@/src/app/lib/supabase'
 import { useState } from 'react'
 import Link from 'next/link'
 
@@ -19,6 +20,17 @@ function formatPesos(valor: number) {
 }
 
 export default function NuevoPedido() {
+  const [usuarioId, setUsuarioId] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function obtenerUsuario() {
+      const { data } = await supabase.auth.getUser()
+      if (data.user) {
+        setUsuarioId(data.user.id)
+      }
+    }
+    obtenerUsuario()
+  }, [])
 
   // Datos del cliente
   const [cliente, setCliente]       = useState('')
@@ -57,34 +69,110 @@ export default function NuevoPedido() {
   async function handleGuardar() {
     setError('')
 
-    // Validaciones básicas
+    // Validaciones
     if (!cliente) { setError('El nombre del cliente es obligatorio'); return }
     if (!telefono) { setError('El teléfono es obligatorio'); return }
-    if (!productoId) { setError('Selecciona un producto'); return }
-    if (!fechaEntrega) { setError('La fecha de entrega es obligatoria'); return }
-    if (cantidad < 1) { setError('La cantidad debe ser al menos 1'); return }
-
-        // Reemplaza la validación del producto
     if (modoProducto === 'inventario' && !productoId) {
-      setError('Selecciona un producto del inventario')
-      return
+      setError('Selecciona un producto del inventario'); return
     }
     if (modoProducto === 'manual' && !productoManual) {
-      setError('Escribe el nombre del producto')
-      return
+      setError('Escribe el nombre del producto'); return
     }
     if (modoProducto === 'manual' && precioManual <= 0) {
-      setError('El precio debe ser mayor a 0')
-      return
+      setError('El precio debe ser mayor a 0'); return
     }
+    if (!fechaEntrega) { setError('La fecha de entrega es obligatoria'); return }
+    if (!usuarioId) { setError('Error de sesión. Recarga la página.'); return }
 
     setGuardando(true)
 
-    // Por ahora simulamos el guardado — después conectamos Supabase
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      // ── PASO 1: Guardar o crear el cliente ──
+      // Buscamos si ya existe un cliente con ese teléfono
+      const { data: clienteExistente } = await supabase
+        .from('clientes')
+        .select('id')
+        .eq('usuario_id', usuarioId)
+        .eq('telefono', telefono)
+        .maybeSingle()
 
-    setGuardando(false)
-    setExito(true)
+      let clienteId: string
+
+      if (clienteExistente) {
+        // Ya existe, usamos su id
+        clienteId = clienteExistente.id
+      } else {
+        // No existe, lo creamos
+        const { data: nuevoCliente, error: errorCliente } = await supabase
+          .from('clientes')
+          .insert({
+            usuario_id: usuarioId,
+            nombre: cliente,
+            telefono: telefono,
+            direccion: direccion,
+            ciudad: ciudad,
+          })
+          .select('id')
+          .single()
+
+        if (errorCliente || !nuevoCliente) {
+          setError('Error al guardar el cliente. Intenta de nuevo.')
+          setGuardando(false)
+          return
+        }
+
+        clienteId = nuevoCliente.id
+      }
+
+      // ── PASO 2: Crear el pedido ──
+      // const nombreProducto = modoProducto === 'inventario'? productoSeleccionado?.nombre : productoManual
+
+      const { data: nuevoPedido, error: errorPedido } = await supabase
+        .from('pedidos')
+        .insert({
+          usuario_id: usuarioId,
+          cliente_id: clienteId,
+          fecha_entrega: fechaEntrega,
+          estado: 'Recibido',
+          metodo_pago: metodoPago,
+          total: total,
+          notas: notas,
+        })
+        .select('id')
+        .single()
+
+      if (errorPedido || !nuevoPedido) {
+        setError('Error al guardar el pedido. Intenta de nuevo.')
+        setGuardando(false)
+        return
+      }
+
+      // ── PASO 3: Guardar el item del pedido ──
+      const { error: errorItem } = await supabase
+        .from('pedido_items')
+        .insert({
+          pedido_id: null,
+          // pedido_id: nuevoPedido.id, -> Correguir para poner a funcionar
+          producto_id: modoProducto === 'inventario' ? Number(productoId) : null,
+          nombre_manual: modoProducto === 'manual' ? productoManual : null,
+          cantidad: cantidad,
+          precio_unitario: precioUnitario,
+        })
+
+      if (errorItem) {
+        setError('Error al guardar el producto del pedido.')
+        setGuardando(false)
+        return
+      }
+
+      // ── TODO SALIÓ BIEN ──
+      setGuardando(false)
+      setExito(true)
+
+    } catch {
+      setError('Ocurrió un error inesperado. Intenta de nuevo.')
+      setGuardando(false)
+    }
   }
 
   // Pantalla de éxito
