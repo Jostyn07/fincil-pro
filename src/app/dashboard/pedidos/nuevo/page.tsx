@@ -68,7 +68,7 @@ export default function NuevoPedido() {
 
   async function handleGuardar() {
     setError('')
-
+    console.log('usuarioId:', usuarioId)
     // Validaciones
     if (!cliente) { setError('El nombre del cliente es obligatorio'); return }
     if (!telefono) { setError('El teléfono es obligatorio'); return }
@@ -151,8 +151,9 @@ export default function NuevoPedido() {
       const { error: errorItem } = await supabase
         .from('pedido_items')
         .insert({
-          pedido_id: null,
-          // pedido_id: nuevoPedido.id, -> Correguir para poner a funcionar
+          // pedido_id: null,
+          pedido_id: nuevoPedido.id,
+          usuario_id: usuarioId,
           producto_id: modoProducto === 'inventario' ? Number(productoId) : null,
           nombre_manual: modoProducto === 'manual' ? productoManual : null,
           cantidad: cantidad,
