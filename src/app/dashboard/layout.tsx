@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/src/app/lib/supabase'
@@ -26,6 +26,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     window.location.href = '/'
   }
 
+  const [nombreNegocio, setNombreNegocio] = useState('Mi Negocio')
+
+  useEffect(() => {
+    async function cargarNegocio() {
+      const { data: userData } = await supabase.auth.getUser()
+      if (!userData.user) return
+      const { data } = await supabase
+        .from('usuarios')
+        .select('nombre_negocio')
+        .eq('id', userData.user.id)
+        .single()
+      if (data?.nombre_negocio) setNombreNegocio(data.nombre_negocio)
+    }
+    cargarNegocio()
+  }, [])
   return (
     <div className="min-h-screen bg-gray-50 flex">
 
@@ -37,8 +52,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="text-white font-bold text-xl tracking-wide">
             Fincil <span className="text-[#00c9a7]">Pro</span>
           </div>
-          <div className="text-white/40 text-xs mt-1">Panel de gestión</div>
+          <div className="text-white/40 text-xs mt-1 truncate">{nombreNegocio}</div>
         </div>
+
+        
 
         {/* Navegación */}
         <nav className="flex-1 p-4 space-y-1">

@@ -165,9 +165,9 @@ export default function Dashboard() {
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { nombre: 'Nuevo pedido',  href: '/dashboard/nuevo',  icono: '➕', color: 'bg-blue-50 text-blue-700'   },
+            { nombre: 'Nuevo pedido',  href: '/dashboard/pedidos/nuevo',  icono: '➕', color: 'bg-blue-50 text-blue-700'   },
             { nombre: 'Inventario',    href: '/dashboard/inventario',      icono: '📦', color: 'bg-orange-50 text-orange-700' },
-            { nombre: 'Recetas',       href: '/dashboard/recetas',         icono: '🍳', color: 'bg-green-50 text-green-700'  },
+            { nombre: 'Recetas',       href: '/dashboard/inventario/recetas',         icono: '🍳', color: 'bg-green-50 text-green-700'  },
             { nombre: 'Clientes',      href: '/dashboard/clientes',        icono: '👥', color: 'bg-purple-50 text-purple-700' },
             { nombre: 'Finanzas',      href: '/dashboard/finanzas',        icono: '💰', color: 'bg-teal-50 text-teal-700'   },
             { nombre: 'Configuración', href: '/dashboard/configuracion',   icono: '⚙️', color: 'bg-gray-50 text-gray-700'   },

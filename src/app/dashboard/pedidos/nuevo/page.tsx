@@ -43,6 +43,30 @@ export default function NuevoPedido() {
   const [guardando, setGuardando] = useState(false)
   const [exito, setExito] = useState(false)
   const [error, setError] = useState('')
+  const [clienteExistenteEncontrado, setClienteExistenteEncontrado] = useState<{
+  id: string
+  nombre: string
+  direccion: string
+  ciudad: string
+  } | null>(null)
+
+  async function buscarClientePorTelefono(tel: string) {
+    if (tel.length < 7) { setClienteExistenteEncontrado(null); return }
+    const { data } = await supabase
+      .from('clientes')
+      .select('id, nombre, direccion, ciudad')
+      .eq('telefono', tel)
+      .maybeSingle()
+    setClienteExistenteEncontrado(data)
+  }
+
+  function usarClienteExistente() {
+    if (!clienteExistenteEncontrado) return
+    setCliente(clienteExistenteEncontrado.nombre)
+    setDireccion(clienteExistenteEncontrado.direccion ?? '')
+    setCiudad(clienteExistenteEncontrado.ciudad ?? '')
+    setClienteExistenteEncontrado(null)
+  }
 
   useEffect(() => {
     async function inicializar() {
@@ -224,11 +248,48 @@ export default function NuevoPedido() {
                 placeholder="Nombre completo"
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono <span className="text-red-500">*</span></label>
-              <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Teléfono <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                value={telefono}
+                onChange={(e) => {
+                  setTelefono(e.target.value)
+                  buscarClientePorTelefono(e.target.value)
+                }}
                 placeholder="300 123 4567"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]"
+              />
+
+              {/* Advertencia de cliente existente */}
+              {clienteExistenteEncontrado && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-amber-200 rounded-lg shadow-lg overflow-hidden">
+                  <div className="px-3 py-2 bg-amber-50 border-b border-amber-100">
+                    <p className="text-xs text-amber-700 font-medium">
+                      ⚠️ Este número ya está registrado a nombre de <strong>{clienteExistenteEncontrado.nombre}</strong>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={usarClienteExistente}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="text-[#00c9a7] font-medium">✓ Usar datos de {clienteExistenteEncontrado.nombre}</span>
+                    <span className="text-gray-400 text-xs block">
+                      {clienteExistenteEncontrado.ciudad || 'Sin ciudad'} — {clienteExistenteEncontrado.direccion || 'Sin dirección'}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClienteExistenteEncontrado(null)}
+                    className="w-full px-3 py-2 text-left text-xs text-gray-400 hover:bg-gray-50 border-t border-gray-100 transition-colors"
+                  >
+                    Ignorar y continuar con datos nuevos
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>

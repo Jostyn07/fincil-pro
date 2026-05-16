@@ -78,6 +78,10 @@ export default function Inventario() {
   const [mObservaciones, setMObservaciones] = useState('')
   const [guardandoMateria, setGuardandoMateria] = useState(false)
 
+  const [productoGuardadoId, setProductoGuardadoId] = useState<string | null>(null)
+  const [costoManual, setCostoManual] = useState(false)
+
+
   useEffect(() => {
     async function cargar() {
       setCargando(true)
@@ -103,9 +107,12 @@ export default function Inventario() {
   async function guardarProducto() {
     if (!pNombre || !usuarioId) return
     setGuardandoProducto(true)
-    await supabase.from('productos').insert({
+    
+    const nombreGuardado = pNombre
+    
+    const { data: productoInsertado } = await supabase.from('productos').insert({
       usuario_id: usuarioId,
-      nombre: pNombre,
+      nombre: nombreGuardado,
       descripcion: pDescripcion,
       tipo: pTipo,
       costo_unitario: pCosto,
@@ -115,12 +122,20 @@ export default function Inventario() {
       stock_minimo: pStockMin,
       vendido: 0,
       observaciones: pObservaciones,
-    })
+    }).select('id').single()
+
     setPNombre(''); setPDescripcion(''); setPCosto(0); setPPrecio(0)
     setPStockInicial(0); setPStockReservado(0); setPStockMin(0); setPObservaciones('')
     setMostrarFormProducto(false)
     setGuardandoProducto(false)
     await cargarDatos()
+
+    // Mostrar banner si es producido
+    if (pTipo === 'Producido' && productoInsertado) {
+      setProductoGuardadoId(productoInsertado.id)
+    }
+    setCostoManual(false)
+
   }
 
   async function guardarMateria() {
@@ -205,9 +220,44 @@ export default function Inventario() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Costo unitario (COP)</label>
-                  <input type="number" min={0} value={pCosto} onChange={(e) => setPCosto(Number(e.target.value))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Costo unitario (COP)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      value={pCosto}
+                      onChange={(e) => setPCosto(Number(e.target.value))}
+                      disabled={pTipo === 'Producido' && !costoManual}
+                      className={`w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7] ${
+                        pTipo === 'Producido' && !costoManual
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : ''
+                      }`}
+                    />
+                  </div>
+
+                  {pTipo === 'Producido' && !costoManual && (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs text-teal-600">
+                        💡 Al guardar el producto podrás calcular el costo de producción unitario en <strong>Recetas</strong>.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setCostoManual(true)}
+                        className="text-xs text-gray-400 hover:text-gray-600 underline"
+                      >
+                        Poner manualmente el costo
+                      </button>
+                    </div>
+                  )}
+
+                  {pTipo === 'Producido' && costoManual && (
+                    <p className="text-xs text-amber-500 mt-1">
+                      ⚠️ Ingresando costo manualmente. Puedes calcularlo con precisión en Recetas.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -250,13 +300,36 @@ export default function Inventario() {
 
               </div>
               <div className="flex gap-3 mt-4 justify-end">
-                <button onClick={() => setMostrarFormProducto(false)}
+                <button onClick={() => {setMostrarFormProducto(false); setCostoManual(false)}}
                   className="border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
                   Cancelar
                 </button>
                 <button onClick={guardarProducto} disabled={guardandoProducto || !pNombre}
                   className="bg-[#00c9a7] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#00b396] disabled:opacity-50">
                   {guardandoProducto ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {productoGuardadoId && (
+            <div className="mb-4 bg-teal-50 border border-teal-100 rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-teal-800">
+                  ✅ Producto guardado. ¿Quieres calcular su costo de producción?
+                </p>
+                <p className="text-xs text-teal-600 mt-0.5">
+                  Ve a Recetas para agregar ingredientes y calcular el costo automáticamente.
+                </p>
+              </div>
+              <div className="flex gap-2 ml-4">
+                <a href="/dashboard/inventario/recetas"
+                  className="bg-[#0f1e35] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#162740] transition-colors whitespace-nowrap">
+                  Ir a Recetas →
+                </a>
+                <button onClick={() => setProductoGuardadoId(null)}
+                  className="text-teal-500 hover:text-teal-700 text-xs">
+                  Cerrar
                 </button>
               </div>
             </div>
