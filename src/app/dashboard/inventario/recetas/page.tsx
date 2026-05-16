@@ -250,10 +250,10 @@ export default function Recetas() {
                       {ingredientes.map((i) => (
                         <tr key={i.id} className="border-b border-gray-50 hover:bg-gray-50">
                           <td className="py-3 px-4 font-medium text-gray-800">
-                            {i.materias_primas[0].nombre}
+                            {i.materias_primas[0]?.nombre}
                           </td>
                           <td className="py-3 px-4 text-gray-700">{i.cantidad_requerida}</td>
-                          <td className="py-3 px-4 text-gray-500">{i.materias_primas[0].unidad}</td>
+                          <td className="py-3 px-4 text-gray-500">{i.materias_primas[0]?.unidad}</td>
                           <td className="py-3 px-4 text-right">
                             <button
                               onClick={() => eliminarIngrediente(i.id)}
