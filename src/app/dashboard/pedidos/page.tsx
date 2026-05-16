@@ -77,6 +77,52 @@ export default function Pedidos() {
       .from('pedidos')
       .update({ estado: nuevoEstado })
       .eq('id', pedidoId)
+
+    // Si se marca como Entregado, generar ingreso automático
+    if (nuevoEstado === 'Entregado') {
+      // Buscar datos del pedido
+      const { data: pedido } = await supabase
+        .from('pedidos')
+        .select(`
+          id, total, metodo_pago, usuario_id,
+          clientes (nombre),
+          pedido_items (nombre_manual)
+        `)
+        .eq('id', pedidoId)
+        .single()
+
+      if (pedido) {
+        // Verificar que no exista ya un ingreso para este pedido
+        const { data: ingresoExistente } = await supabase
+          .from('ingresos')
+          .select('id')
+          .eq('pedido_id', pedidoId)
+          .maybeSingle()
+
+        if (!ingresoExistente) {
+          const nombreCliente = Array.isArray(pedido.clientes)
+            ? pedido.clientes[0]?.nombre
+            : (pedido.clientes as { nombre: string } | null)?.nombre
+
+          const nombreProducto = pedido.pedido_items?.[0]?.nombre_manual ?? ''
+
+          await supabase.from('ingresos').insert({
+            usuario_id: pedido.usuario_id,
+            pedido_id: pedidoId,
+            fecha: new Date().toISOString().split('T')[0],
+            categoria: 'Venta de productos',
+            producto: nombreProducto,
+            cliente: nombreCliente ?? '',
+            cantidad: 1,
+            precio_unitario: pedido.total,
+            total: pedido.total,
+            forma_pago: pedido.metodo_pago ?? '',
+            confirmado: true,
+          })
+        }
+      }
+    }
+
     await cargarPedidos()
   }
 

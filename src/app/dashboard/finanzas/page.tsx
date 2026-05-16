@@ -96,25 +96,59 @@ export default function Finanzas() {
 
   const iTotal = iCantidad * iPrecioUnitario
 
-  useEffect(() => {
+  type PedidoSinIngreso = {
+    id: string
+    numero_pedido: number
+    total: number
+    metodo_pago: string
+    clientes: { nombre: string } | { nombre: string }[] | null
+    pedido_items: { nombre_manual: string }[]
+    }
+
+    // Y cambia el estado
+    const [pedidosSinIngreso, setPedidosSinIngreso] = useState<PedidoSinIngreso[]>([])
+
+    useEffect(() => {
     async function inicializar() {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) return
-      setUsuarioId(userData.user.id)
-      await cargarDatos()
+        const { data: userData } = await supabase.auth.getUser()
+        if (!userData.user) return
+        setUsuarioId(userData.user.id)
+
+        // Cargar datos inline en lugar de llamar cargarDatos()
+        setCargando(true)
+        const mesActual = new Date().toISOString().slice(0, 7)
+        const [{ data: ing }, { data: gas }] = await Promise.all([
+        supabase.from('ingresos').select('*').gte('fecha', `${mesActual}-01`).order('fecha', { ascending: false }),
+        supabase.from('gastos').select('*').gte('fecha', `${mesActual}-01`).order('fecha', { ascending: false }),
+        ])
+        if (ing) setIngresos(ing as Ingreso[])
+        if (gas) setGastos(gas as Gasto[])
+        setCargando(false)
+
+        const { data: ingresosConPedido } = await supabase
+        .from('ingresos').select('pedido_id').not('pedido_id', 'is', null)
+        const pedidoIdsConIngreso = ingresosConPedido?.map(i => i.pedido_id) ?? []
+
+        const { data: pedidosEntregados } = await supabase
+        .from('pedidos')
+        .select(`id, numero_pedido, total, metodo_pago, clientes (nombre), pedido_items (nombre_manual)`)
+        .eq('estado', 'Entregado')
+
+        const sinIngreso = pedidosEntregados?.filter(p => !pedidoIdsConIngreso.includes(p.id)) ?? []
+        setPedidosSinIngreso(sinIngreso as unknown as PedidoSinIngreso[])
     }
     inicializar()
-  }, [])
+    }, [])
 
-  async function cargarDatos() {
+    async function cargarDatos() {
     setCargando(true)
     const mesActual = new Date().toISOString().slice(0, 7)
     const [{ data: ing }, { data: gas }] = await Promise.all([
-      supabase.from('ingresos')
+        supabase.from('ingresos')
         .select('*')
         .gte('fecha', `${mesActual}-01`)
         .order('fecha', { ascending: false }),
-      supabase.from('gastos')
+        supabase.from('gastos')
         .select('*')
         .gte('fecha', `${mesActual}-01`)
         .order('fecha', { ascending: false }),
@@ -122,7 +156,32 @@ export default function Finanzas() {
     if (ing) setIngresos(ing as Ingreso[])
     if (gas) setGastos(gas as Gasto[])
     setCargando(false)
-  }
+
+    // Paso 1 — obtener pedido_ids que ya tienen ingreso
+    const { data: ingresosConPedido } = await supabase
+        .from('ingresos')
+        .select('pedido_id')
+        .not('pedido_id', 'is', null)
+
+    const pedidoIdsConIngreso = ingresosConPedido?.map(i => i.pedido_id) ?? []
+
+    // Paso 2 — obtener pedidos entregados
+    const { data: pedidosEntregados } = await supabase
+        .from('pedidos')
+        .select(`
+        id, numero_pedido, total, metodo_pago,
+        clientes (nombre),
+        pedido_items (nombre_manual)
+        `)
+        .eq('estado', 'Entregado')
+
+    // Paso 3 — filtrar los que no tienen ingreso
+    const sinIngreso = pedidosEntregados?.filter(
+        p => !pedidoIdsConIngreso.includes(p.id)
+    ) ?? []
+
+    setPedidosSinIngreso(sinIngreso as unknown as PedidoSinIngreso[])
+    }
 
   function limpiarFormIngreso() {
     setIFecha(new Date().toISOString().split('T')[0])
@@ -202,6 +261,28 @@ export default function Finanzas() {
 
   const formasPago = ['Efectivo', 'Transferencia', 'Nequi', 'Daviplata', 'Tarjeta', 'Crédito']
 
+
+  async function registrarIngresosDesdePedido(pedido: PedidoSinIngreso) {
+  if (!usuarioId) return
+  const nombreCliente = Array.isArray(pedido.clientes)
+    ? pedido.clientes[0]?.nombre
+    : pedido.clientes?.nombre
+
+  await supabase.from('ingresos').insert({
+    usuario_id: usuarioId,
+    pedido_id: pedido.id,
+    fecha: new Date().toISOString().split('T')[0],
+    categoria: 'Venta de productos',
+    producto: pedido.pedido_items?.[0]?.nombre_manual ?? '',
+    cliente: nombreCliente ?? '',
+    cantidad: 1,
+    precio_unitario: pedido.total,
+    total: pedido.total,
+    forma_pago: pedido.metodo_pago ?? '',
+    confirmado: true,
+  })
+  await cargarDatos()
+}
   return (
     <div>
 
@@ -238,6 +319,38 @@ export default function Finanzas() {
               <p className="text-sm text-gray-500">{ingresos.length} registro{ingresos.length !== 1 ? 's' : ''} este mes</p>
               <p className="text-lg font-bold text-blue-600">{formatPesos(totalIngresos)}</p>
             </div>
+            {pedidosSinIngreso.length > 0 && (
+            <div className="mb-4 bg-amber-50 border border-amber-100 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-amber-800 mb-2">
+                ⚠️ {pedidosSinIngreso.length} pedido{pedidosSinIngreso.length !== 1 ? 's' : ''} entregado{pedidosSinIngreso.length !== 1 ? 's' : ''} sin ingreso registrado
+                </h3>
+                <div className="space-y-2">
+                {pedidosSinIngreso.map((p) => {
+                    const nombreCliente = Array.isArray(p.clientes)
+                    ? p.clientes[0]?.nombre
+                    : p.clientes?.nombre
+                    return (
+                    <div key={p.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-amber-100">
+                        <div>
+                        <span className="text-sm font-medium text-gray-800">
+                            #{String(p.numero_pedido).padStart(3, '0')} — {nombreCliente}
+                        </span>
+                        <span className="text-xs text-gray-400 ml-2">
+                            {formatPesos(p.total)}
+                        </span>
+                        </div>
+                        <button
+                        onClick={() => registrarIngresosDesdePedido(p)}
+                        className="text-xs bg-[#00c9a7] text-white px-3 py-1 rounded-lg hover:bg-[#00b396] transition-colors"
+                        >
+                        Registrar ingreso
+                        </button>
+                    </div>
+                    )
+                })}
+                </div>
+            </div>
+            )}
             <button onClick={() => setMostrarFormIngreso(true)}
               className="bg-[#0f1e35] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#162740] transition-colors">
               ➕ Registrar ingreso
