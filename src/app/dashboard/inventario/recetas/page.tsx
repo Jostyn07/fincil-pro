@@ -23,7 +23,7 @@ type Ingrediente = {
     nombre: string
     unidad: string
     costo_unitario: number
-  }[]
+  }
 }
 
 export default function Recetas() {
@@ -113,7 +113,7 @@ export default function Recetas() {
   )
 
   const costoMateriales = ingredientes.reduce((sum, i) => {
-    return sum + (i.cantidad_requerida * (i.materias_primas[0]?.costo_unitario ?? 0))
+    return sum + (i.cantidad_requerida * (i.materias_primas?.costo_unitario ?? 0))
     }, 0)
 
     const costoTotal = costoMateriales + manoObra + gastosVariables
@@ -228,13 +228,13 @@ export default function Recetas() {
                     </thead>
                     <tbody>
                     {ingredientes.map((i) => {
-                        const costoUnit = i.materias_primas[0]?.costo_unitario ?? 0
+                        const costoUnit = i.materias_primas?.costo_unitario ?? 0
                         const subtotal = i.cantidad_requerida * costoUnit
                         return (
                         <tr key={i.id} className="border-b border-gray-50 hover:bg-gray-50">
-                            <td className="py-3 px-4 font-medium text-gray-800">{i.materias_primas[0]?.nombre}</td>
+                            <td className="py-3 px-4 font-medium text-gray-800">{i.materias_primas?.nombre}</td>
                             <td className="py-3 px-4 text-gray-700">{i.cantidad_requerida}</td>
-                            <td className="py-3 px-4 text-gray-500">{i.materias_primas[0]?.unidad}</td>
+                            <td className="py-3 px-4 text-gray-500">{i.materias_primas?.unidad}</td>
                             <td className="py-3 px-4 text-gray-600">{formatPesos(costoUnit)}</td>
                             <td className="py-3 px-4 font-medium text-gray-800">{formatPesos(subtotal)}</td>
                             <td className="py-3 px-4 text-right">
@@ -247,23 +247,6 @@ export default function Recetas() {
                         )
                     })}
                     </tbody>
-                      {ingredientes.map((i) => (
-                        <tr key={i.id} className="border-b border-gray-50 hover:bg-gray-50">
-                          <td className="py-3 px-4 font-medium text-gray-800">
-                            {i.materias_primas[0]?.nombre}
-                          </td>
-                          <td className="py-3 px-4 text-gray-700">{i.cantidad_requerida}</td>
-                          <td className="py-3 px-4 text-gray-500">{i.materias_primas[0]?.unidad}</td>
-                          <td className="py-3 px-4 text-right">
-                            <button
-                              onClick={() => eliminarIngrediente(i.id)}
-                              className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                            >
-                              Eliminar
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
                   </table>
                 )}
               </div>
