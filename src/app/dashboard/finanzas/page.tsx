@@ -174,6 +174,7 @@ export default function Finanzas() {
         pedido_items (nombre_manual)
         `)
         .eq('estado', 'Entregado')
+        .eq('estado_pago', 'Pendiente')
 
     // Paso 3 — filtrar los que no tienen ingreso
     const sinIngreso = pedidosEntregados?.filter(
@@ -281,6 +282,12 @@ export default function Finanzas() {
     forma_pago: pedido.metodo_pago ?? '',
     confirmado: true,
   })
+
+    await supabase
+    .from('pedidos')
+    .update({ estado_pago: 'Cobrado' })
+    .eq('id', pedido.id)
+    
   await cargarDatos()
 }
   return (

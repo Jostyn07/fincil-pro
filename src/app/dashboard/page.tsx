@@ -41,6 +41,16 @@ function colorEstado(estado: string) {
   return colores[estado] || 'bg-gray-100 text-gray-700'
 }
 
+async function marcarCobrado(pedidoId: string) {
+  const { error } = await supabase
+    .from('pedidos')
+    .update({ estado_pago: 'Cobrado' })
+    .eq('id', pedidoId)
+
+  console.log('Error marcarCobrado:', JSON.stringify(error))
+  await cargarPedidos()
+}
+
 export default function Dashboard() {
 
   const [ingresosMes, setIngresosMes] = useState(0)
@@ -69,9 +79,10 @@ export default function Dashboard() {
         supabase.from('pedidos')
           .select('total')
           .eq('estado', 'Entregado')
+          .eq('estado_pago', 'Cobrado')
           .gte('fecha_creacion', inicioMes)
           .lte('fecha_creacion', finMes),
-
+          
         // Pedidos activos
         supabase.from('pedidos')
           .select('id', { count: 'exact' })
@@ -124,6 +135,8 @@ export default function Dashboard() {
     }
     cargar()
   }, [])
+
+  
 
   const kpis = [
     {
