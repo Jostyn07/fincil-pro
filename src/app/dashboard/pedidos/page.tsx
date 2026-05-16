@@ -11,9 +11,10 @@ type Pedido = {
   numero_pedido: number
   fecha_entrega: string
   estado: string
+  estado_pago: string
   total: number
   notas: string
-  clientes: { nombre: string; telefono: string } | null  // objeto, no array
+  clientes: { nombre: string; telefono: string } | null
   pedido_items: { nombre_manual: string; cantidad: number }[]
 }
 
@@ -126,6 +127,14 @@ export default function Pedidos() {
     await cargarPedidos()
   }
 
+  async function marcarCobrado(pedidoId: string) {
+    await supabase
+      .from('pedidos')
+      .update({ estado_pago: 'Cobrado' })
+      .eq('id', pedidoId)
+    await cargarPedidos()
+  }
+
   const pedidosFiltrados = pedidos.filter((p) => {
     const coincideEstado = filtro === 'Todos' || p.estado === filtro
     const nombreCliente = p.clientes?.nombre?.toLowerCase() || ''
@@ -203,6 +212,7 @@ export default function Pedidos() {
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500">ENTREGA</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500">ESTADO</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500">CAMBIAR ESTADO</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500">COBRO</th>
               </tr>
             </thead>
             <tbody>
@@ -214,7 +224,7 @@ export default function Pedidos() {
                 </tr>
               ) : pedidosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-gray-400">
+                  <td colSpan={8} className="py-12 text-center text-gray-400">
                     <div className="text-3xl mb-2">📭</div>
                     No hay pedidos con ese filtro
                   </td>
@@ -258,6 +268,22 @@ export default function Pedidos() {
                           <option key={e} value={e}>{e}</option>
                         ))}
                       </select>
+                    </td>
+                    <td className="py-3 px-4">
+                      {pedido.estado === 'Entregado' ? (
+                        pedido.estado_pago === 'Cobrado' ? (
+                          <span className="text-xs text-green-600 font-medium">✅ Cobrado</span>
+                        ) : (
+                          <button
+                            onClick={() => marcarCobrado(pedido.id)}
+                            className="text-xs bg-[#00c9a7] text-white px-2 py-1 rounded-lg hover:bg-[#00b396] transition-colors"
+                          >
+                            Marcar cobrado
+                          </button>
+                        )
+                      ) : (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
                     </td>
                   </tr>
                 ))
