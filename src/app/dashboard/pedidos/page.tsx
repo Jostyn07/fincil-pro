@@ -15,7 +15,7 @@ type Pedido = {
   total: number
   notas: string
   clientes: { nombre: string; telefono: string } | null
-  pedido_items: { nombre_manual: string; cantidad: number }[]
+  pedido_items: { nombre_manual: string; cantidad: number; producto_id: string | null }[]
 }
 
 const estados = ['Todos', 'Recibido', 'En producción', 'Listo', 'En camino', 'Entregado', 'Cancelado']
@@ -80,21 +80,67 @@ export default function Pedidos() {
       .update({ estado: nuevoEstado })
       .eq('id', pedidoId)
 
-    // Si se marca como Entregado, generar ingreso automático
     if (nuevoEstado === 'Entregado') {
-      // Buscar datos del pedido
       const { data: pedido } = await supabase
         .from('pedidos')
         .select(`
           id, total, metodo_pago, usuario_id,
           clientes (nombre),
-          pedido_items (nombre_manual)
+          pedido_items (nombre_manual, cantidad, producto_id)
         `)
         .eq('id', pedidoId)
         .single()
 
       if (pedido) {
-        // Verificar que no exista ya un ingreso para este pedido
+
+        // ── Mover stock de reservado a vendido ──
+        for (const item of pedido.pedido_items ?? []) {
+          if (item.producto_id) {
+
+            // 1 — Actualizar producto: reservado → vendido
+            const { data: producto } = await supabase
+              .from('productos')
+              .select('stock_reservado, vendido')
+              .eq('id', item.producto_id)
+              .single()
+
+            if (producto) {
+              await supabase
+                .from('productos')
+                .update({
+                  stock_reservado: Math.max(0, producto.stock_reservado - item.cantidad),
+                  vendido: producto.vendido + item.cantidad,
+                })
+                .eq('id', item.producto_id)
+            }
+
+            // 2 — Descontar materias primas según receta
+            const { data: recetas } = await supabase
+              .from('recetas')
+              .select('materia_prima_id, cantidad_requerida')
+              .eq('producto_id', item.producto_id)
+
+            for (const receta of recetas ?? []) {
+              const { data: materia } = await supabase
+                .from('materias_primas')
+                .select('stock_actual')
+                .eq('id', receta.materia_prima_id)
+                .single()
+
+              if (materia) {
+                const descuento = receta.cantidad_requerida * item.cantidad
+                await supabase
+                  .from('materias_primas')
+                  .update({
+                    stock_actual: Math.max(0, materia.stock_actual - descuento),
+                  })
+                  .eq('id', receta.materia_prima_id)
+              }
+            }
+          }
+        }
+
+        // ── Crear ingreso pendiente ──
         const { data: ingresoExistente } = await supabase
           .from('ingresos')
           .select('id')
