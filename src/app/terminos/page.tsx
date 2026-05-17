@@ -434,7 +434,7 @@ export default function Terminos() {
 
             {/* Firma */}
             <div className="pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
-              Toolkap SAS · toolkapcorp@gmail.com · Barranquilla, Colombia · Versión {VERSION_TERMINOS}
+              Toolkap · toolkapcorp@gmail.com · Barranquilla, Colombia · Versión {VERSION_TERMINOS}
             </div>
 
           </div>
