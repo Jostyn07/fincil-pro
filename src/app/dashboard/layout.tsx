@@ -15,6 +15,7 @@ const navegacion = [
   { nombre: 'Finanzas',     href: '/dashboard/finanzas', icono: '💰' },
   { nombre: 'Equilibrio', href: '/dashboard/finanzas/equilibrio', icono: '⚖️' },
   { nombre: 'Personal',     href: '/dashboard/finanzas/personal', icono: '👤' },
+  { nombre: 'Flujo de caja', href: '/dashboard/finanzas/flujo', icono: '💸' },
   { nombre: 'Configuración',href: '/dashboard/configuracion',   icono: '⚙️' },
 ]
 
