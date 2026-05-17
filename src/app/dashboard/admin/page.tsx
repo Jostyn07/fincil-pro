@@ -8,7 +8,6 @@ const ADMIN_EMAIL = 'jostynag12@gmail.com'
 
 type Usuario = {
   id: string
-  email: string
   nombre_negocio: string
   ciudad: string
   created_at: string
@@ -175,7 +174,7 @@ export default function AdminPanel() {
 
       const { data: todosUsuarios } = await supabase
         .from('usuarios')
-        .select('id, email, nombre_negocio, ciudad, created_at')
+        .select('id, nombre_negocio, ciudad, created_at')
         .order('created_at', { ascending: false })
 
       if (!todosUsuarios) {
@@ -221,7 +220,6 @@ export default function AdminPanel() {
       setUsuarios(
         todosUsuarios.map(u => ({
           id: u.id,
-          email: (u as { email?: string }).email ?? '',
           nombre_negocio: u.nombre_negocio ?? '',
           ciudad: u.ciudad ?? '',
           created_at: u.created_at,
@@ -339,7 +337,7 @@ export default function AdminPanel() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="text-left py-3 px-3 text-xs font-semibold text-gray-500">EMAIL</th>
+                <th className="text-left py-3 px-3 text-xs font-semibold text-gray-500">ID</th>
                 <th className="text-left py-3 px-3 text-xs font-semibold text-gray-500">NEGOCIO</th>
                 <th className="text-left py-3 px-3 text-xs font-semibold text-gray-500">CIUDAD</th>
                 <th className="text-left py-3 px-3 text-xs font-semibold text-gray-500">REGISTRO</th>
@@ -359,7 +357,7 @@ export default function AdminPanel() {
               ) : (
                 usuariosFiltrados.map((u) => (
                   <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                    <td className="py-3 px-3 text-gray-500 text-xs font-mono">{u.email || '—'}</td>
+                    <td className="py-3 px-3 text-gray-400 text-xs font-mono">{u.id.slice(0, 8)}…</td>
                     <td className="py-3 px-3 font-medium text-gray-800">{u.nombre_negocio || '—'}</td>
                     <td className="py-3 px-3 text-gray-500">{u.ciudad || '—'}</td>
                     <td className="py-3 px-3 text-gray-500 text-xs whitespace-nowrap">
