@@ -44,6 +44,7 @@ function colorEstado(estado: string) {
 export default function Dashboard() {
 
   const [ingresosMes, setIngresosMes] = useState(0)
+  const [gastosMes, setGastosMes] = useState(0)
   const [pedidosActivos, setPedidosActivos] = useState(0)
   const [pedidosRecientes, setPedidosRecientes] = useState<PedidoReciente[]>([])
   const [alertasStock, setAlertasStock] = useState<AlertaStock[]>([])
@@ -57,12 +58,16 @@ export default function Dashboard() {
       const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString()
       const finMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).toISOString()
 
+      const inicioMesFecha = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString().split('T')[0]
+      const finMesFecha = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).toISOString().split('T')[0]
+
       const [
         { data: pedidosEntregados },
         { data: activos },
         { data: recientes },
         { data: productosStockBajo },
         { data: materiasStockBajo },
+        { data: gastosDelMes },
       ] = await Promise.all([
 
         // Ingresos del mes — pedidos entregados
@@ -72,7 +77,7 @@ export default function Dashboard() {
           .eq('estado_pago', 'Cobrado')
           .gte('fecha_creacion', inicioMes)
           .lte('fecha_creacion', finMes),
-          
+
         // Pedidos activos
         supabase.from('pedidos')
           .select('id', { count: 'exact' })
@@ -97,11 +102,21 @@ export default function Dashboard() {
         supabase.from('materias_primas')
           .select('id, nombre, stock_actual, stock_minimo')
           .filter('stock_actual', 'lte', 'stock_minimo'),
+
+        // Gastos del mes
+        supabase.from('gastos')
+          .select('valor')
+          .gte('fecha', inicioMesFecha)
+          .lte('fecha', finMesFecha),
       ])
 
       // Calcular ingresos
       const total = pedidosEntregados?.reduce((sum, p) => sum + (p.total ?? 0), 0) ?? 0
       setIngresosMes(total)
+
+      // Calcular gastos
+      const totalGastos = gastosDelMes?.reduce((sum, g) => sum + (g.valor ?? 0), 0) ?? 0
+      setGastosMes(totalGastos)
 
       // Pedidos activos
       setPedidosActivos(activos?.length ?? 0)
@@ -139,17 +154,17 @@ export default function Dashboard() {
     },
     {
       titulo: 'Gastos del mes',
-      valor: '$0',
+      valor: cargando ? '...' : formatPesos(gastosMes),
       icono: '📤',
       color: 'bg-red-50',
       colorTexto: 'text-red-600',
     },
     {
       titulo: 'Utilidad neta',
-      valor: cargando ? '...' : formatPesos(ingresosMes),
+      valor: cargando ? '...' : formatPesos(ingresosMes - gastosMes),
       icono: '📊',
-      color: 'bg-green-50',
-      colorTexto: 'text-green-600',
+      color: ingresosMes - gastosMes >= 0 ? 'bg-green-50' : 'bg-red-50',
+      colorTexto: ingresosMes - gastosMes >= 0 ? 'text-green-600' : 'text-red-600',
     },
     {
       titulo: 'Pedidos activos',
@@ -177,9 +192,6 @@ export default function Dashboard() {
             </div>
             <div className={`text-2xl font-bold ${kpi.colorTexto} mb-1`}>{kpi.valor}</div>
             <div className="text-sm font-medium text-gray-700">{kpi.titulo}</div>
-            {kpi.titulo === 'Gastos del mes' && (
-              <div className="text-xs text-gray-400 mt-1">Disponible en Finanzas</div>
-            )}
           </div>
         ))}
       </div>

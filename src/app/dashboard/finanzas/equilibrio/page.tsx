@@ -172,117 +172,123 @@ export default function Equilibrio() {
           </div>
 
           {/* Punto de equilibrio */}
-          <div className={`rounded-xl p-5 shadow-sm border ${
-            superado ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'
-          }`}>
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="font-semibold text-gray-800">⚖️ Punto de equilibrio</h3>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Ventas mínimas para no perder dinero este mes
-                </p>
+          {margenContribucion <= 0 ? (
+            <div className="bg-red-50 border border-red-100 rounded-xl p-5">
+              <h3 className="font-semibold text-red-800 mb-2">⚠️ Punto de equilibrio inalcanzable</h3>
+              <p className="text-sm text-red-700 mb-3">
+                Tus gastos variables (<strong>{formatPesos(gastosVariables)}</strong>) superan tus ingresos
+                (<strong>{formatPesos(ingresosMes)}</strong>). Cada venta genera pérdida antes de cubrir
+                gastos fijos.
+              </p>
+              <div className="bg-white rounded-lg p-4 text-sm space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Pérdida por cada $100 vendidos</span>
+                  <span className="font-bold text-red-600">
+                    {ingresosMes > 0
+                      ? formatPesos(Math.abs(ingresosMes - gastosVariables) / (ingresosMes / 100))
+                      : '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Pérdida total del mes</span>
+                  <span className="font-bold text-red-600">
+                    {formatPesos(gastosVariables + totalGastosFijos - ingresosMes)}
+                  </span>
+                </div>
               </div>
-              <span className={`text-2xl font-bold ${superado ? 'text-green-600' : 'text-red-600'}`}>
-                {formatPesos(puntoEquilibrio)}
-              </span>
+              <p className="text-xs text-red-500 mt-3">
+                💡 Para mejorar: reduce los costos variables o aumenta el precio de venta.
+              </p>
             </div>
-
-
-    {/* Punto de equilibrio */}
-    {puntoEquilibrio === 0 && gastosFijos === 0 ? (
-    <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 shadow-sm">
-        <div className="flex items-start justify-between mb-3">
-        <div>
-            <h3 className="font-semibold text-gray-800">⚖️ Punto de equilibrio</h3>
-            <p className="text-xs text-gray-500 mt-0.5">
-            No aplica — no tienes gastos fijos registrados
-            </p>
-        </div>
-        <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full font-medium">
-            Sin gastos fijos
-        </span>
-        </div>
-
-        <div className="bg-white rounded-lg p-4 space-y-2 text-sm mb-3">
-        <div className="flex justify-between">
-            <span className="text-gray-600">Ingresos del mes</span>
-            <span className="font-medium text-blue-600">{formatPesos(ingresosMes)}</span>
-        </div>
-        <div className="flex justify-between">
-            <span className="text-gray-600">(-) Gastos variables</span>
-            <span className="font-medium text-orange-600">({formatPesos(gastosVariables)})</span>
-        </div>
-        <div className="flex justify-between border-t border-gray-100 pt-2">
-            <span className="font-semibold text-gray-700">Ganancia neta estimada</span>
-            <span className="font-bold text-green-600">{formatPesos(ingresosMes - gastosVariables)}</span>
-        </div>
-        </div>
-
-        <div className="bg-blue-100 rounded-lg p-3 text-sm text-blue-700">
-        ✅ <strong>No tienes gastos fijos registrados.</strong> Toda tu venta cubre primero 
-        los gastos variables y el resto es ganancia. Registra gastos fijos en Finanzas 
-        para ver tu punto de equilibrio real.
-        </div>
-    </div>
-    ) : (
-    <div className={`rounded-xl p-5 shadow-sm border ${
-        superado ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'
-    }`}>
-        <div className="flex items-start justify-between mb-4">
-        <div>
-            <h3 className="font-semibold text-gray-800">⚖️ Punto de equilibrio</h3>
-            <p className="text-xs text-gray-500 mt-0.5">
-            Ventas mínimas para no perder dinero este mes
-            </p>
-        </div>
-        <span className={`text-2xl font-bold ${superado ? 'text-green-600' : 'text-red-600'}`}>
-            {formatPesos(puntoEquilibrio)}
-        </span>
-        </div>
-
-        {/* Barra de progreso */}
-        <div className="mb-3">
-        <div className="flex justify-between text-xs text-gray-500 mb-1">
-            <span>$0</span>
-            <span>{formatPesos(puntoEquilibrio)}</span>
-        </div>
-        <div className="h-4 bg-white/60 rounded-full overflow-hidden">
-            <div
-            className={`h-full rounded-full transition-all duration-500 ${
-                superado ? 'bg-green-500' : 'bg-red-400'
-            }`}
-            style={{ width: `${porcentajeAlcanzado}%` }}
-            />
-        </div>
-        <div className="flex justify-between text-xs mt-1">
-            <span className="text-gray-500">
-            Llevas {formatPorcentaje(porcentajeAlcanzado)}
-            </span>
-            <span className="font-medium text-gray-700">
-            {formatPesos(ingresosMes)} vendidos
-            </span>
-        </div>
-        </div>
-
-        {/* Mensaje */}
-        <div className={`rounded-lg p-3 text-sm ${
-        superado ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-        }`}>
-        {superado ? (
-            <>
-            ✅ <strong>¡Superaste el punto de equilibrio!</strong> Llevas{' '}
-            <strong>{formatPesos(diferencia)}</strong> de ganancia neta este mes.
-            </>
-        ) : (
-            <>
-            ⚠️ Te faltan <strong>{formatPesos(Math.abs(diferencia))}</strong> en ventas 
-            para cubrir todos tus gastos fijos este mes.
-            </>
-        )}
-        </div>
-    </div>
-    )}
-          </div>
+          ) : puntoEquilibrio === 0 && gastosFijos === 0 ? (
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 shadow-sm">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="font-semibold text-gray-800">⚖️ Punto de equilibrio</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    No aplica — no tienes gastos fijos registrados
+                  </p>
+                </div>
+                <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full font-medium">
+                  Sin gastos fijos
+                </span>
+              </div>
+              <div className="bg-white rounded-lg p-4 space-y-2 text-sm mb-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Ingresos del mes</span>
+                  <span className="font-medium text-blue-600">{formatPesos(ingresosMes)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">(-) Gastos variables</span>
+                  <span className="font-medium text-orange-600">({formatPesos(gastosVariables)})</span>
+                </div>
+                <div className="flex justify-between border-t border-gray-100 pt-2">
+                  <span className="font-semibold text-gray-700">Ganancia neta estimada</span>
+                  <span className="font-bold text-green-600">{formatPesos(ingresosMes - gastosVariables)}</span>
+                </div>
+              </div>
+              <div className="bg-blue-100 rounded-lg p-3 text-sm text-blue-700">
+                ✅ <strong>No tienes gastos fijos registrados.</strong> Toda tu venta cubre primero
+                los gastos variables y el resto es ganancia. Registra gastos fijos en Finanzas
+                para ver tu punto de equilibrio real.
+              </div>
+            </div>
+          ) : (
+            <div className={`rounded-xl p-5 shadow-sm border ${
+              superado ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'
+            }`}>
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="font-semibold text-gray-800">⚖️ Punto de equilibrio</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Ventas mínimas para no perder dinero este mes
+                  </p>
+                </div>
+                <span className={`text-2xl font-bold ${superado ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatPesos(puntoEquilibrio)}
+                </span>
+              </div>
+              {/* Barra de progreso */}
+              <div className="mb-3">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>$0</span>
+                  <span>{formatPesos(puntoEquilibrio)}</span>
+                </div>
+                <div className="h-4 bg-white/60 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      superado ? 'bg-green-500' : 'bg-red-400'
+                    }`}
+                    style={{ width: `${porcentajeAlcanzado}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs mt-1">
+                  <span className="text-gray-500">
+                    Llevas {formatPorcentaje(porcentajeAlcanzado)}
+                  </span>
+                  <span className="font-medium text-gray-700">
+                    {formatPesos(ingresosMes)} vendidos
+                  </span>
+                </div>
+              </div>
+              {/* Mensaje */}
+              <div className={`rounded-lg p-3 text-sm ${
+                superado ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              }`}>
+                {superado ? (
+                  <>
+                    ✅ <strong>¡Superaste el punto de equilibrio!</strong> Llevas{' '}
+                    <strong>{formatPesos(diferencia)}</strong> de ganancia neta este mes.
+                  </>
+                ) : (
+                  <>
+                    ⚠️ Te faltan <strong>{formatPesos(Math.abs(diferencia))}</strong> en ventas
+                    para cubrir todos tus gastos fijos este mes.
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Escenarios */}
           {puntoEquilibrio > 0 && <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
