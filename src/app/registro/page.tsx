@@ -12,9 +12,15 @@ export default function Registro() {
   const [error, setError] = useState('')
   const [exito, setExito] = useState(false)
   const [cargando, setCargando] = useState(false)
+  const [aceptoTerminos, setAceptoTerminos] = useState(false)
 
   async function handleRegistro() {
     setError('')
+
+    if (!aceptoTerminos) {
+      setError('Debes aceptar los Términos y Condiciones para continuar')
+      return
+    }
 
     // Verificar que las contraseñas coincidan
     if (password !== confirmar) {
@@ -40,6 +46,16 @@ export default function Registro() {
     if (error) {
       setError('No se pudo crear la cuenta. Verifica tu email.')
       return
+    }
+
+    // ← Registrar aceptación de términos
+    const { data: userData } = await supabase.auth.getUser()
+    if (userData.user) {
+      await supabase.from('aceptacion_terminos').insert({
+        usuario_id: userData.user.id,
+        version: 'v1.0-2026-05',
+        user_agent: navigator.userAgent,
+      })
     }
 
     // Registro exitoso
@@ -120,9 +136,25 @@ export default function Registro() {
           />
         </div>
 
+        <div className="mb-5 flex items-start gap-3">
+          <input
+            type="checkbox"
+            id="terminos"
+            checked={aceptoTerminos}
+            onChange={(e) => setAceptoTerminos(e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-blue-600 shrink-0"
+          />
+          <label htmlFor="terminos" className="text-sm text-gray-600 leading-snug">
+            He leído y acepto los{' '}
+            <a href="/terminos" target="_blank" className="text-blue-600 hover:underline font-medium">
+              Términos y Condiciones, Política de Privacidad y Política de Cookies
+            </a>
+          </label>
+        </div>
+
         <button
           onClick={handleRegistro}
-          disabled={cargando}
+          disabled={cargando || !aceptoTerminos}
           className="w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 mb-4"
         >
           {cargando ? 'Creando cuenta...' : 'Crear cuenta'}

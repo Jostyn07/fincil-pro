@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/src/app/lib/supabase'
 
 // Lista de páginas del menú lateral
@@ -21,7 +21,9 @@ const navegacion = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const pathname = usePathname()
+  const router = useRouter()
   const [menuAbierto, setMenuAbierto] = useState(false)
+  const [verificando, setVerificando] = useState(true)
 
   async function cerrarSesion() {
     await supabase.auth.signOut()
@@ -31,18 +33,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [nombreNegocio, setNombreNegocio] = useState('Mi Negocio')
 
   useEffect(() => {
-    async function cargarNegocio() {
+    async function inicializar() {
       const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) return
+      if (!userData.user) { router.push('/'); return }
+
+      // Verificar aceptación de términos
+      const { data: terminos } = await supabase
+        .from('aceptacion_terminos')
+        .select('id')
+        .eq('usuario_id', userData.user.id)
+        .maybeSingle()
+
+      if (!terminos) { router.push('/terminos'); return }
+
       const { data } = await supabase
         .from('usuarios')
         .select('nombre_negocio')
         .eq('id', userData.user.id)
         .single()
       if (data?.nombre_negocio) setNombreNegocio(data.nombre_negocio)
+
+      setVerificando(false)
     }
-    cargarNegocio()
-  }, [])
+    inicializar()
+  }, [router])
+
+  if (verificando) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-400 text-sm">Cargando...</div>
+      </div>
+    )
+  }
   return (
     <div className="min-h-screen bg-gray-50 flex">
 
