@@ -67,16 +67,21 @@ export default function Registro() {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
-          <div className="text-5xl mb-4">✅</div>
+          <div className="text-5xl mb-4">📧</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            ¡Cuenta creada!
+            ¡Revisa tu correo!
           </h2>
-          <p className="text-gray-500 mb-6">
-            Revisa tu correo y confirma tu cuenta para poder ingresar.
+          <p className="text-gray-500 mb-2">
+            Enviamos un enlace de confirmación a:
           </p>
-          <Link href="/" className="block w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-blue-700 transition-colors text-center">
-            Ir al login
-          </Link>
+          <p className="font-semibold text-gray-800 mb-4">{email}</p>
+          <p className="text-gray-400 text-sm mb-6">
+            Haz clic en el enlace del correo para activar tu cuenta e ingresar a Fincil Pro.
+            Si no lo ves, revisa la carpeta de spam.
+          </p>
+          <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-sm text-amber-700">
+            ⚠️ El enlace expira en 24 horas.
+          </div>
         </div>
       </div>
     )
