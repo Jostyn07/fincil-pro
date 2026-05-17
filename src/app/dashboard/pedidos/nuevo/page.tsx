@@ -347,7 +347,8 @@ export default function NuevoPedido() {
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Precio unitario (COP)</label>
-                    <input type="number" min={0} value={precioManual} onChange={(e) => setPrecioManual(Number(e.target.value))}
+                    <input type="number" min={0} value={precioManual || ''} onChange={(e) => setPrecioManual(Number(e.target.value))}
+                      placeholder="0"
                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                   </div>
                   <div className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">

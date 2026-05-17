@@ -55,6 +55,7 @@ export default function Pedidos() {
         numero_pedido,
         fecha_entrega,
         estado,
+        estado_pago,
         total,
         notas,
         clientes (nombre, telefono),
@@ -118,7 +119,7 @@ export default function Pedidos() {
             precio_unitario: pedido.total,
             total: pedido.total,
             forma_pago: pedido.metodo_pago ?? '',
-            confirmado: true,
+            confirmado: false,
           })
         }
       }
@@ -132,8 +133,16 @@ export default function Pedidos() {
       .from('pedidos')
       .update({ estado_pago: 'Cobrado' })
       .eq('id', pedidoId)
+
+    // Confirmar el ingreso asociado
+    await supabase
+      .from('ingresos')
+      .update({ confirmado: true })
+      .eq('pedido_id', pedidoId)
+
     await cargarPedidos()
   }
+
 
   const pedidosFiltrados = pedidos.filter((p) => {
     const coincideEstado = filtro === 'Todos' || p.estado === filtro

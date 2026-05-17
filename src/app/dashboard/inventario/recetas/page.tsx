@@ -285,8 +285,9 @@ export default function Recetas() {
                         type="number"
                         min={0}
                         step={0.1}
-                        value={cantidad}
+                        value={cantidad || ''}
                         onChange={(e) => setCantidad(Number(e.target.value))}
+                        placeholder="0"
                         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]"
                       />
                     </div>
@@ -315,7 +316,7 @@ export default function Recetas() {
                         <label className="block text-xs font-medium text-gray-700 mb-1">
                         Mano de obra (COP)
                         </label>
-                        <input type="number" min={0} value={manoObra}
+                        <input type="number" min={0} value={manoObra || ''}
                         onChange={(e) => setManoObra(Number(e.target.value))}
                         placeholder="0"
                         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
@@ -324,9 +325,9 @@ export default function Recetas() {
                         <label className="block text-xs font-medium text-gray-700 mb-1">
                         Otros gastos variables (COP)
                         </label>
-                        <input type="number" min={0} value={gastosVariables}
+                        <input type="number" min={0} value={gastosVariables || ''}
                         onChange={(e) => setGastosVariables(Number(e.target.value))}
-                        placeholder="Ej: empaque, transporte..."
+                        placeholder="0"
                         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                     </div>
                     </div>

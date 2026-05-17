@@ -12,7 +12,9 @@ const navegacion = [
   { nombre: 'Inventario',   href: '/dashboard/inventario',      icono: '📦' },
   { nombre: 'Recetas',      href: '/dashboard/inventario/recetas',         icono: '🍳' },
   { nombre: 'Clientes',     href: '/dashboard/clientes',        icono: '👥' },
-  { nombre: 'Finanzas',     href: '/dashboard/finanzas',        icono: '💰' },
+  { nombre: 'Finanzas',     href: '/dashboard/finanzas', icono: '💰' },
+  { nombre: 'Equilibrio', href: '/dashboard/finanzas/equilibrio', icono: '⚖️' },
+  { nombre: 'Personal',     href: '/dashboard/finanzas/personal', icono: '👤' },
   { nombre: 'Configuración',href: '/dashboard/configuracion',   icono: '⚙️' },
 ]
 

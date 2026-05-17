@@ -118,7 +118,7 @@ export default function Finanzas() {
         setCargando(true)
         const mesActual = new Date().toISOString().slice(0, 7)
         const [{ data: ing }, { data: gas }] = await Promise.all([
-        supabase.from('ingresos').select('*').gte('fecha', `${mesActual}-01`).order('fecha', { ascending: false }),
+        supabase.from('ingresos').select('*').eq('confirmado', true).gte('fecha', `${mesActual}-01`).order('fecha', { ascending: false }),
         supabase.from('gastos').select('*').gte('fecha', `${mesActual}-01`).order('fecha', { ascending: false }),
         ])
         if (ing) setIngresos(ing as Ingreso[])
@@ -147,6 +147,7 @@ export default function Finanzas() {
         supabase.from('ingresos')
         .select('*')
         .gte('fecha', `${mesActual}-01`)
+        .eq('confirmado', true)
         .order('fecha', { ascending: false }),
         supabase.from('gastos')
         .select('*')
@@ -259,6 +260,9 @@ export default function Finanzas() {
   const utilidad = totalIngresos - totalGastos
   const gastosFijos = gastos.filter(g => g.tipo === 'Fijo').reduce((sum, g) => sum + g.valor, 0)
   const gastosVariables = gastos.filter(g => g.tipo === 'Variable').reduce((sum, g) => sum + g.valor, 0)
+  const totalGastosFijos = gastosFijos
+  const puntoEquilibrio = totalGastos
+  const ingresosMes = totalIngresos
 
   const formasPago = ['Efectivo', 'Transferencia', 'Nequi', 'Daviplata', 'Tarjeta', 'Crédito']
 
@@ -415,13 +419,15 @@ export default function Finanzas() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
-                  <input type="number" min={1} value={iCantidad} onChange={(e) => setICantidad(Number(e.target.value))}
+                  <input type="number" min={1} value={iCantidad || ''} onChange={(e) => setICantidad(Number(e.target.value))}
+                    placeholder="0"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Precio unitario (COP) *</label>
-                  <input type="number" min={0} value={iPrecioUnitario} onChange={(e) => setIPrecioUnitario(Number(e.target.value))}
+                  <input type="number" min={0} value={iPrecioUnitario || ''} onChange={(e) => setIPrecioUnitario(Number(e.target.value))}
+                    placeholder="0"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                 </div>
 
@@ -564,7 +570,8 @@ export default function Finanzas() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Valor (COP) *</label>
-                  <input type="number" min={0} value={gValor} onChange={(e) => setGValor(Number(e.target.value))}
+                  <input type="number" min={0} value={gValor || ''} onChange={(e) => setGValor(Number(e.target.value))}
+                    placeholder="0"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                 </div>
 
@@ -748,6 +755,57 @@ export default function Finanzas() {
               </div>
             </div>
           </div>
+
+          {/* Escenarios — solo mostrar si hay gastos fijos */}
+          {totalGastosFijos > 0 && (
+            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+              <h3 className="font-semibold text-gray-800 mb-4">📈 Escenarios</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 rounded-lg">
+                    <tr>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500">ESCENARIO</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500">VENTAS NECESARIAS</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500">RESULTADO</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500">ESTADO</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { label: 'Solo cubrir gastos', multiplicador: 1, color: 'text-gray-600' },
+                      { label: '10% de ganancia', multiplicador: 1.1, color: 'text-blue-600' },
+                      { label: '20% de ganancia', multiplicador: 1.2, color: 'text-teal-600' },
+                      { label: '30% de ganancia', multiplicador: 1.3, color: 'text-green-600' },
+                    ].map((escenario) => {
+                      const ventasNecesarias = puntoEquilibrio * escenario.multiplicador
+                      const ganancia = ventasNecesarias - puntoEquilibrio
+                      const alcanzado = ingresosMes >= ventasNecesarias
+                      return (
+                        <tr key={escenario.label} className="border-t border-gray-50">
+                          <td className="py-3 px-3 text-gray-700">{escenario.label}</td>
+                          <td className={`py-3 px-3 font-medium ${escenario.color}`}>
+                            {formatPesos(ventasNecesarias)}
+                          </td>
+                          <td className="py-3 px-3 text-gray-500">
+                            {escenario.multiplicador === 1 ? '—' : `+${formatPesos(ganancia)}`}
+                          </td>
+                          <td className="py-3 px-3">
+                            {alcanzado ? (
+                              <span className="text-xs text-green-600 font-medium">✅ Alcanzado</span>
+                            ) : (
+                              <span className="text-xs text-gray-400">
+                                Faltan {formatPesos(ventasNecesarias - ingresosMes)}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Gastos por categoría */}
           {gastos.length > 0 && (

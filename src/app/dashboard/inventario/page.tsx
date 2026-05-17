@@ -285,8 +285,9 @@ export default function Inventario() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Costo unitario (COP)</label>
                   <input
-                    type="number" min={0} value={pCosto}
+                    type="number" min={0} value={pCosto || ''}
                     onChange={(e) => setPCosto(Number(e.target.value))}
+                    placeholder="0"
                     disabled={pTipo === 'Producido' && !costoManual}
                     className={`w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7] ${
                       pTipo === 'Producido' && !costoManual ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''
@@ -312,7 +313,8 @@ export default function Inventario() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Precio de venta (COP)</label>
-                  <input type="number" min={0} value={pPrecio} onChange={(e) => setPPrecio(Number(e.target.value))}
+                  <input type="number" min={0} value={pPrecio || ''} onChange={(e) => setPPrecio(Number(e.target.value))}
+                    placeholder="0"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                 </div>
 
@@ -324,19 +326,22 @@ export default function Inventario() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock inicial</label>
-                  <input type="number" min={0} value={pStockInicial} onChange={(e) => setPStockInicial(Number(e.target.value))}
+                  <input type="number" min={0} value={pStockInicial || ''} onChange={(e) => setPStockInicial(Number(e.target.value))}
+                    placeholder="0"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock reservado</label>
-                  <input type="number" min={0} value={pStockReservado} onChange={(e) => setPStockReservado(Number(e.target.value))}
+                  <input type="number" min={0} value={pStockReservado || ''} onChange={(e) => setPStockReservado(Number(e.target.value))}
+                    placeholder="0"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock mínimo</label>
-                  <input type="number" min={0} value={pStockMin} onChange={(e) => setPStockMin(Number(e.target.value))}
+                  <input type="number" min={0} value={pStockMin || ''} onChange={(e) => setPStockMin(Number(e.target.value))}
+                    placeholder="0"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                 </div>
 
@@ -490,19 +495,22 @@ export default function Inventario() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock actual</label>
-                  <input type="number" min={0} value={mStock} onChange={(e) => setMStock(Number(e.target.value))}
+                  <input type="number" min={0} value={mStock || ''} onChange={(e) => setMStock(Number(e.target.value))}
+                    placeholder="0"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock mínimo</label>
-                  <input type="number" min={0} value={mStockMin} onChange={(e) => setMStockMin(Number(e.target.value))}
+                  <input type="number" min={0} value={mStockMin || ''} onChange={(e) => setMStockMin(Number(e.target.value))}
+                    placeholder="0"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Costo unitario (COP)</label>
-                  <input type="number" min={0} value={mCosto} onChange={(e) => setMCosto(Number(e.target.value))}
+                  <input type="number" min={0} value={mCosto || ''} onChange={(e) => setMCosto(Number(e.target.value))}
+                    placeholder="0"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00c9a7]" />
                 </div>
 
