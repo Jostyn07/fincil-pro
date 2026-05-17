@@ -146,7 +146,7 @@ export default function Registro() {
           />
           <label htmlFor="terminos" className="text-sm text-gray-600 leading-snug">
             He leído y acepto los{' '}
-            <a href="/app/terminos" target="_blank" className="text-blue-600 hover:underline font-medium">
+            <a href="/terminos" target="_blank" className="text-blue-600 hover:underline font-medium">
               Términos y Condiciones, Política de Privacidad y Política de Cookies
             </a>
           </label>
