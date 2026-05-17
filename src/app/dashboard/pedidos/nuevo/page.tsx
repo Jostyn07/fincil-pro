@@ -139,7 +139,18 @@ export default function NuevoPedido() {
         clienteId = nuevoCliente.id
       }
 
-      // Paso 2 — Pedido
+      // Paso 2 — Calcular número de pedido del usuario
+      const { data: ultimoPedido } = await supabase
+        .from('pedidos')
+        .select('numero_pedido')
+        .eq('usuario_id', usuarioId)
+        .order('numero_pedido', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      const siguienteNumero = (ultimoPedido?.numero_pedido ?? 0) + 1
+
+      // Paso 3 — Crear pedido con número correcto
       const { data: nuevoPedido, error: errorPedido } = await supabase
         .from('pedidos')
         .insert({
@@ -150,6 +161,7 @@ export default function NuevoPedido() {
           metodo_pago: metodoPago,
           total: total,
           notas: notas,
+          numero_pedido: siguienteNumero,
         })
         .select('id')
         .single()
@@ -158,7 +170,7 @@ export default function NuevoPedido() {
         setError('Error al guardar el pedido.'); setGuardando(false); return
       }
 
-      // Paso 3 — Item del pedido
+      // Paso 4 — Item del pedido
       const { error: errorItem } = await supabase
         .from('pedido_items')
         .insert({
@@ -176,7 +188,7 @@ export default function NuevoPedido() {
         setError('Error al guardar el producto del pedido.'); setGuardando(false); return
       }
 
-      // Paso 4 — Descontar stock si viene del inventario
+      // Paso 5 — Descontar stock si viene del inventario
       if (modoProducto === 'inventario' && productoSeleccionado) {
         await supabase
           .from('productos')
