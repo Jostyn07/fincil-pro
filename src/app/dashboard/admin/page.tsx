@@ -166,38 +166,39 @@ export default function AdminPanel() {
       }
 
       const ahora = new Date()
-      const hace30Dias = new Date(ahora.getTime() - 30 * 24 * 60 * 60 * 1000)
-      const hace7Dias = new Date(ahora.getTime() - 7 * 24 * 60 * 60 * 1000)
-      const hoyISO = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).toISOString()
-      const hace30ISO = hace30Dias.toISOString().split('T')[0]
-      const hace7ISO = hace7Dias.toISOString().split('T')[0]
+      const hoyStr = ahora.toISOString().split('T')[0]
+      const hace30ISO = new Date(ahora.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const hace7ISO = new Date(ahora.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-      const { data: todosUsuarios } = await supabase
-        .from('usuarios')
-        .select('id, nombre_negocio, ciudad, created_at')
-        .order('created_at', { ascending: false })
-
-      if (!todosUsuarios) {
-        setCargando(false)
-        return
-      }
-
-      setTotalUsuarios(todosUsuarios.length)
-      setRegistrosHoy(todosUsuarios.filter(u => (u.created_at ?? '') >= hoyISO).length)
-
+      // usuarios no tiene created_at — usamos aceptacion_terminos como fuente de fecha de registro
       const [
+        { data: usuariosRaw },
+        { data: aceptaciones },
         { data: pedidosTodos },
         { data: ingresosTodos },
         { data: pedidosMes },
         { data: ingresosMes },
         { data: pedidos7 },
       ] = await Promise.all([
+        supabase.from('usuarios').select('id, nombre_negocio, ciudad'),
+        supabase.from('aceptacion_terminos').select('usuario_id, created_at').order('created_at', { ascending: false }),
         supabase.from('pedidos').select('usuario_id'),
         supabase.from('ingresos').select('usuario_id'),
         supabase.from('pedidos').select('usuario_id').gte('fecha_creacion', hace30ISO),
         supabase.from('ingresos').select('usuario_id').gte('fecha', hace30ISO),
         supabase.from('pedidos').select('usuario_id').gte('fecha_creacion', hace7ISO),
       ])
+
+      if (!usuariosRaw) { setCargando(false); return }
+
+      // Fecha de registro por usuario_id (primer registro de aceptacion_terminos)
+      const fechaMap: Record<string, string> = {}
+      aceptaciones?.forEach(a => {
+        if (!fechaMap[a.usuario_id]) fechaMap[a.usuario_id] = a.created_at
+      })
+
+      setTotalUsuarios(usuariosRaw.length)
+      setRegistrosHoy(aceptaciones?.filter(a => a.created_at.startsWith(hoyStr)).length ?? 0)
 
       const activosMesIds = new Set([
         ...(pedidosMes?.map(p => p.usuario_id) ?? []),
@@ -208,45 +209,43 @@ export default function AdminPanel() {
       const activos7Ids = new Set(pedidos7?.map(p => p.usuario_id) ?? [])
 
       const pedidosCount: Record<string, number> = {}
-      pedidosTodos?.forEach(p => {
-        pedidosCount[p.usuario_id] = (pedidosCount[p.usuario_id] ?? 0) + 1
-      })
+      pedidosTodos?.forEach(p => { pedidosCount[p.usuario_id] = (pedidosCount[p.usuario_id] ?? 0) + 1 })
 
       const ingresosCount: Record<string, number> = {}
-      ingresosTodos?.forEach(i => {
-        ingresosCount[i.usuario_id] = (ingresosCount[i.usuario_id] ?? 0) + 1
-      })
+      ingresosTodos?.forEach(i => { ingresosCount[i.usuario_id] = (ingresosCount[i.usuario_id] ?? 0) + 1 })
 
-      setUsuarios(
-        todosUsuarios.map(u => ({
+      const lista: Usuario[] = usuariosRaw
+        .map(u => ({
           id: u.id,
           nombre_negocio: u.nombre_negocio ?? '',
           ciudad: u.ciudad ?? '',
-          created_at: u.created_at,
+          created_at: fechaMap[u.id] ?? '',
           cantidadPedidos: pedidosCount[u.id] ?? 0,
           cantidadIngresos: ingresosCount[u.id] ?? 0,
           activo: activos7Ids.has(u.id),
         }))
-      )
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
 
-      // Chart: fill last 30 days with zeros then count registrations
+      setUsuarios(lista)
+
+      // Gráfica: registros por día según aceptacion_terminos
       const diasMap: Record<string, number> = {}
       for (let i = 29; i >= 0; i--) {
         const d = new Date(ahora)
         d.setDate(ahora.getDate() - i)
         diasMap[d.toISOString().split('T')[0]] = 0
       }
-      todosUsuarios.forEach(u => {
-        const dia = (u.created_at ?? '').split('T')[0]
+      aceptaciones?.forEach(a => {
+        const dia = a.created_at.split('T')[0]
         if (dia in diasMap) diasMap[dia]++
       })
       setRegistrosPorDia(Object.entries(diasMap).map(([dia, total]) => ({ dia, total })))
 
       setEventosRecientes(
-        todosUsuarios.slice(0, 10).map(u => ({
+        lista.slice(0, 10).map(u => ({
           id: u.id,
-          nombre_negocio: u.nombre_negocio ?? '',
-          ciudad: u.ciudad ?? '',
+          nombre_negocio: u.nombre_negocio,
+          ciudad: u.ciudad,
           created_at: u.created_at,
         }))
       )
